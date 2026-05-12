@@ -1,3 +1,4 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20146585.svg)](https://doi.org/10.5281/zenodo.20146585)
 # CRC Simulator — Cyclic Redundancy Check
 
 Educational simulator for CRC-based error detection in computer networks.
