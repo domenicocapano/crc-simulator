@@ -1,0 +1,1902 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulatore CRC v3.5</title>
+<meta name="author" content="Domenico Capano">
+<meta name="description" content="Simulatore didattico interattivo del Codice di Ridondanza Ciclica (CRC) per lo studio del controllo errori nel livello Data Link. Risorsa OER per Sistemi e Reti, 3° anno ITIS.">
+<meta name="keywords" content="CRC, Codice di Ridondanza Ciclica, Data Link, Ethernet, FCS, controllo errori, simulatore didattico, OER, ITIS, Sistemi e Reti">
+<meta name="license" content="CC-BY-4.0">
+<meta name="version" content="3.5">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #1F3A5F 0%, #2E5C8A 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #222;
+  }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    overflow: visible;
+  }
+  header {
+    background: linear-gradient(135deg, #1F3A5F 0%, #2E5C8A 100%);
+    color: white;
+    padding: 24px 32px;
+  }
+  header h1 { font-size: 26px; margin-bottom: 6px; }
+  header p { opacity: 0.9; font-size: 15px; }
+  main { padding: 28px 32px; }
+
+  /* Sezioni */
+  .section {
+    margin-bottom: 28px;
+    border: 1px solid #e0e6ee;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .section-header {
+    background: #F4F7FB;
+    padding: 14px 20px;
+    border-bottom: 1px solid #e0e6ee;
+    font-weight: 600;
+    color: #1F3A5F;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-header .num {
+    background: #1F3A5F;
+    color: white;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+  .section-body { padding: 20px; }
+
+  /* Input */
+  .input-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .input-group { flex: 1; min-width: 220px; }
+  .input-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #444;
+    font-size: 14px;
+  }
+  .input-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #d0d7de;
+    border-radius: 6px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 18px;
+    letter-spacing: 2px;
+    transition: border-color 0.2s;
+  }
+  .input-group input:focus {
+    outline: none;
+    border-color: #2E5C8A;
+  }
+  .input-group .hint {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+    font-style: italic;
+  }
+  .polynomial-display {
+    margin-top: 6px;
+    padding: 6px 10px;
+    background: #E8F0FE;
+    border-radius: 4px;
+    font-family: 'Cambria Math', 'Times New Roman', serif;
+    font-size: 15px;
+    color: #1F3A5F;
+    min-height: 28px;
+  }
+  .poly-formula {
+    display: inline-block;
+    font-family: 'Cambria Math', 'Times New Roman', serif;
+    font-size: 16px;
+    color: #1F3A5F;
+    line-height: 1.8;
+    word-spacing: 2px;
+  }
+  .poly-formula sup {
+    font-size: 0.7em;
+    vertical-align: super;
+    line-height: 0;
+    margin: 0 1px;
+  }
+
+  /* Buttons */
+  .button-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: #1F3A5F; color: white; }
+  .btn-primary:hover { background: #2E5C8A; }
+  .btn-success { background: #2E7D32; color: white; }
+  .btn-success:hover { background: #388E3C; }
+  .btn-danger  { background: #C62828; color: white; }
+  .btn-danger:hover  { background: #D32F2F; }
+  .btn-secondary { background: #ECEFF1; color: #1F3A5F; }
+  .btn-secondary:hover { background: #CFD8DC; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button:focus-visible {
+    outline: 3px solid #FFB300;
+    outline-offset: 2px;
+  }
+
+  /* Esempio rapido */
+  .examples {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .example-chip {
+    padding: 4px 10px;
+    background: #FFF4CE;
+    border: 1px solid #E0C95C;
+    border-radius: 12px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #6B5A00;
+  }
+  .example-chip:hover { background: #FFEAA0; }
+
+  /* Step display */
+  .steps-container { font-family: 'Consolas', 'Monaco', monospace; font-size: 16px; }
+  .step {
+    margin-bottom: 14px;
+    padding: 12px;
+    background: #F8F9FB;
+    border-left: 3px solid #2E5C8A;
+    border-radius: 4px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s, transform 0.4s;
+  }
+  .step.visible { opacity: 1; transform: translateY(0); }
+  .step-title {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2E5C8A;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .bit-row {
+    display: flex;
+    gap: 0;
+    margin: 2px 0;
+    align-items: center;
+    line-height: 1.4;
+  }
+  .label-cell {
+    min-width: 60px;
+    color: #555;
+    font-size: 13px;
+    padding-right: 8px;
+  }
+  .bit {
+    display: inline-block;
+    width: 24px;
+    text-align: center;
+    font-weight: 500;
+  }
+  .bit.dim { color: #bbb; }
+  .bit.divisor { color: #C62828; }
+  .bit.result { color: #1F3A5F; font-weight: 700; }
+  .bit.dropped {
+    background: #FFF4CE;
+    border-radius: 3px;
+  }
+  .separator {
+    border-top: 1px dashed #888;
+    margin: 4px 0;
+    margin-left: 60px;
+    width: calc(100% - 60px);
+  }
+
+  /* Frame visualizer */
+  .frame-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 16px 0;
+    padding: 16px;
+    background: #F4F7FB;
+    border-radius: 8px;
+    border: 2px solid #2E5C8A;
+  }
+  .frame-bit {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-family: 'Consolas', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+    position: relative;
+  }
+  .frame-bit.message {
+    background: #E8F0FE;
+    color: #1F3A5F;
+    border: 1px solid #2E5C8A;
+  }
+  .frame-bit.crc {
+    background: #FFF4CE;
+    color: #6B5A00;
+    border: 1px solid #E0C95C;
+  }
+  .frame-bit.flipped {
+    background: #FFE2E2 !important;
+    color: #C62828 !important;
+    border: 2px solid #C62828 !important;
+    transform: scale(1.1);
+    box-shadow: 0 0 8px rgba(198, 40, 40, 0.4);
+  }
+  .frame-bit:hover { transform: scale(1.05); }
+  .frame-bit .pos-label {
+    position: absolute;
+    bottom: -18px;
+    font-size: 10px;
+    color: #888;
+    font-weight: normal;
+    font-family: sans-serif;
+  }
+  .frame-legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+    font-size: 13px;
+    color: #555;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid;
+  }
+
+  /* Result box */
+  .result-box {
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .result-success {
+    background: #E6F4EA;
+    border: 2px solid #2E7D32;
+    color: #1B5E20;
+  }
+  .result-error {
+    background: #FFE2E2;
+    border: 2px solid #C62828;
+    color: #B71C1C;
+  }
+  .result-icon { font-size: 28px; margin-bottom: 8px; }
+  .result-detail {
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: normal;
+    color: #555;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    border-bottom: 2px solid #e0e6ee;
+    margin-bottom: 0;
+  }
+  .tab {
+    padding: 12px 20px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-size: 14px;
+    font-weight: 600;
+    color: #888;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    color: #1F3A5F;
+    border-bottom-color: #1F3A5F;
+  }
+  .tab:hover:not(.active) { color: #2E5C8A; }
+  .tab-content { display: none; padding: 20px; }
+  .tab-content.active { display: block; }
+
+  /* Error msg */
+  .error-msg {
+    background: #FFE2E2;
+    color: #B71C1C;
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    border-left: 4px solid #C62828;
+    font-size: 14px;
+  }
+  .warning-msg {
+    background: #FFF8E5;
+    color: #6B5A00;
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    border-left: 4px solid #E0C95C;
+    font-size: 14px;
+  }
+
+  /* Sezione esempi verificati */
+  .verified-section {
+    border-color: #2E7D32;
+  }
+  .verified-section .section-header {
+    background: #E6F4EA;
+    color: #1B5E20;
+    border-bottom-color: #2E7D32;
+  }
+  .verified-section .section-header .num {
+    background: #2E7D32;
+  }
+  .verified-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+    font-size: 13px;
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .verified-table th {
+    background: #2E7D32;
+    color: white;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+  }
+  .verified-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e0e6ee;
+    vertical-align: middle;
+  }
+  .verified-table tr:last-child td { border-bottom: none; }
+  .verified-table tr:nth-child(even) td { background: #F4F7FB; }
+  .verified-table code {
+    font-family: 'Consolas', monospace;
+    background: #F0F4F8;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #1F3A5F;
+    font-size: 12px;
+    word-break: break-all;
+  }
+  .verify-btn {
+    padding: 6px 14px;
+    font-size: 12px;
+    background: #2E7D32;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .verify-btn:hover { background: #388E3C; }
+  .verify-btn:focus { outline: 2px solid #1B5E20; outline-offset: 2px; }
+  @media (max-width: 760px) {
+    .verified-table { font-size: 11px; }
+    .verified-table th, .verified-table td { padding: 6px 8px; }
+    .verified-table code { font-size: 10px; padding: 1px 3px; }
+  }
+
+  /* Info box */
+  .info-box {
+    background: #E8F0FE;
+    border-left: 4px solid #2E5C8A;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 12px 0;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .generator-guide {
+    background: #FFF8E1;
+    border-left: 4px solid #E0A800;
+    padding: 14px 16px;
+    border-radius: 4px;
+    margin: 16px 0;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+  .generator-guide h3 {
+    margin: 0 0 8px 0;
+    color: #6B5A00;
+    font-size: 15px;
+  }
+  .generator-guide ul {
+    margin: 8px 0 8px 20px;
+  }
+  .generator-guide code, .standard-box code {
+    font-family: Consolas, Monaco, monospace;
+    background: rgba(255,255,255,0.7);
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+  .standard-box {
+    background: #F4F7FB;
+    border: 1px solid #d8e2ef;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-top: 12px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .example-chip.real {
+    background: #E6F4EA;
+    border-color: #81C784;
+    color: #1B5E20;
+  }
+
+  /* Animation control */
+  .controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #F4F7FB;
+    border-radius: 6px;
+  }
+  .controls label { font-size: 13px; color: #555; }
+  .speed-slider {
+    flex: 1;
+    max-width: 200px;
+  }
+
+
+
+  /* Lavagna dinamica unica della divisione modulo 2 */
+  .division-board {
+    border: 2px solid #2E5C8A;
+    border-radius: 10px;
+    background: #FBFDFF;
+    padding: 14px;
+    margin: 14px 0 18px;
+    box-shadow: 0 4px 16px rgba(31,58,95,0.10);
+  }
+  .division-board.sticky-board {
+    position: sticky;
+    top: 12px;
+    z-index: 50;
+    box-shadow: 0 8px 28px rgba(31,58,95,0.18);
+  }
+  .division-board.sticky-board::before {
+    content: "Lavagna fissata: resta visibile mentre scorri i passaggi";
+    display: block;
+    margin: -4px -4px 10px -4px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: #E8F0FE;
+    color: #1F3A5F;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .division-board h3 {
+    margin: 0 0 10px 0;
+    color: #1F3A5F;
+    font-size: 16px;
+  }
+  .board-subtitle {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+  .board-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .board-counter {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1F3A5F;
+    background: #E8F0FE;
+    border-radius: 999px;
+    padding: 6px 10px;
+  }
+  .board-mini-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .board-mini-buttons button {
+    padding: 7px 11px;
+    font-size: 12px;
+    background: #ECEFF1;
+    color: #1F3A5F;
+  }
+  .division-canvas {
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+  .board-row {
+    display: grid;
+    grid-template-columns: 96px max-content;
+    align-items: center;
+    min-width: max-content;
+    margin: 4px 0;
+    font-family: Consolas, Monaco, monospace;
+  }
+  .board-label {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 12px;
+    color: #555;
+    padding-right: 10px;
+    text-align: right;
+  }
+  .board-bits {
+    display: flex;
+    gap: 2px;
+  }
+  .board-bit {
+    width: 26px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    font-weight: 700;
+    color: #243447;
+    background: #F4F7FB;
+  }
+  .board-bit.blank { color: transparent; background: transparent; }
+  .board-bit.window { background: #FFF4CE; border-color: #E0C95C; }
+  .board-bit.lead-one { background: #E6F4EA; border-color: #2E7D32; color: #1B5E20; }
+  .board-bit.lead-zero { background: #FFE2E2; border-color: #C62828; color: #B71C1C; }
+  .board-bit.divisor-cell { background: #FFE2E2; border-color: #C62828; color: #B71C1C; }
+  .board-bit.result-cell { background: #E8F0FE; border-color: #2E5C8A; color: #1F3A5F; }
+  .board-bit.remainder-cell { background: #E6F4EA; border-color: #2E7D32; color: #1B5E20; }
+  .board-bit.lowered {
+    outline: 3px solid #E0A800;
+    outline-offset: 1px;
+  }
+  .board-separator {
+    height: 1px;
+    border-top: 1px dashed #888;
+    margin: 5px 0 5px 96px;
+    min-width: 240px;
+  }
+  .board-explanation {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #F4F7FB;
+    border-left: 4px solid #2E5C8A;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .board-explanation strong { color: #1F3A5F; }
+  .board-rule {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #555;
+    line-height: 1.55;
+  }
+
+  @media (max-width: 760px), (max-height: 620px) {
+    .division-board.sticky-board {
+      position: static;
+    }
+    .division-board.sticky-board::before {
+      content: "Lavagna dinamica della divisione modulo 2";
+    }
+  }
+
+
+
+  /* ============================================================
+     Responsive v3.2: uso efficace su smartphone
+     ============================================================ */
+  .mobile-jump {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    z-index: 100;
+    display: none;
+    padding: 10px 12px;
+    border-radius: 999px;
+    background: #1F3A5F;
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(0,0,0,.25);
+    font-size: 13px;
+  }
+
+  @media (max-width: 820px) {
+    body { padding: 8px; }
+    .container { border-radius: 10px; max-width: 100%; overflow: visible; }
+    header { padding: 18px 16px; }
+    header h1 { font-size: 20px; line-height: 1.25; }
+    header p { font-size: 13px; line-height: 1.45; }
+    main { padding: 14px 12px; }
+
+    .section { margin-bottom: 18px; border-radius: 10px; }
+    .section-header { padding: 12px 14px; font-size: 14px; align-items: flex-start; }
+    .section-header .num { width: 24px; height: 24px; flex: 0 0 24px; font-size: 13px; }
+    .section-body { padding: 14px; }
+
+    .input-row { flex-direction: column; gap: 12px; }
+    .input-group { min-width: 0; width: 100%; }
+    .input-group input {
+      font-size: 16px; /* evita zoom automatico su iOS */
+      letter-spacing: 1px;
+      padding: 12px;
+    }
+    .polynomial-display { font-size: 13px; overflow-x: auto; white-space: nowrap; }
+
+    .examples { gap: 8px; }
+    .example-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 8px 10px;
+      font-size: 12px;
+      border-radius: 999px;
+    }
+
+    .generator-guide, .standard-box, .info-box {
+      font-size: 13px;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .button-row { display: grid; grid-template-columns: 1fr; gap: 9px; }
+    button { width: 100%; min-height: 44px; padding: 11px 12px; }
+
+    .controls { flex-direction: column; align-items: stretch; gap: 8px; }
+    .speed-slider { max-width: none; width: 100%; }
+
+    .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tab { flex: 0 0 auto; padding: 12px 14px; }
+    .tab-content { padding: 14px; }
+
+    .division-board { padding: 12px; margin: 12px 0 16px; }
+    .division-board.sticky-board { position: static; }
+    .division-board.sticky-board::before { content: "Lavagna dinamica della divisione modulo 2"; }
+    .board-toolbar { display: grid; grid-template-columns: 1fr; gap: 8px; }
+    .board-toolbar h3 { font-size: 15px; margin-bottom: 0; }
+    .board-counter { width: max-content; }
+    .board-mini-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .board-mini-buttons button { width: 100%; min-height: 40px; }
+    .board-subtitle { font-size: 12px; }
+
+    .division-canvas {
+      max-width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid #e0e6ee;
+      border-radius: 8px;
+      padding: 8px 6px 10px;
+      background: #fff;
+    }
+    .board-row { grid-template-columns: 72px max-content; margin: 3px 0; }
+    .board-label { font-size: 11px; padding-right: 6px; }
+    .board-bit { width: 22px; height: 28px; font-size: 13px; }
+    .board-separator { margin-left: 72px; }
+    .board-explanation { font-size: 13px; padding: 10px 12px; }
+    .board-rule { font-size: 12px; }
+
+    .steps-container { font-size: 13px; overflow-x: auto; }
+    .step { padding: 10px; margin-bottom: 10px; }
+    .bit { width: 20px; }
+    .label-cell { min-width: 48px; font-size: 12px; }
+    .separator { margin-left: 48px; width: calc(100% - 48px); }
+
+    .frame-display {
+      gap: 6px;
+      padding: 12px;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      -webkit-overflow-scrolling: touch;
+    }
+    .frame-bit {
+      flex: 0 0 34px;
+      width: 34px;
+      height: 34px;
+      font-size: 16px;
+    }
+    .frame-bit .pos-label { bottom: -16px; font-size: 9px; }
+    .frame-legend { font-size: 12px; gap: 8px; }
+    .legend-item { min-width: 140px; }
+
+    .result-box { font-size: 16px; padding: 16px; }
+    footer { padding: 14px 12px; font-size: 12px; }
+    .mobile-jump { display: block; }
+  }
+
+  @media (max-width: 420px) {
+    header h1 { font-size: 18px; }
+    .section-header { font-size: 13px; }
+    .board-bit { width: 20px; height: 26px; font-size: 12px; }
+    .frame-bit { flex-basis: 32px; width: 32px; height: 32px; }
+    .board-row { grid-template-columns: 64px max-content; }
+    .board-label { font-size: 10px; }
+    .board-separator { margin-left: 64px; }
+  }
+
+
+  footer {
+    background: #F4F7FB;
+    padding: 16px 32px;
+    text-align: center;
+    font-size: 13px;
+    color: #666;
+    border-top: 1px solid #e0e6ee;
+  }
+
+
+  /* Elementi professionali v3.5 */
+  .top-action-bar { display:flex; gap:10px; flex-wrap:wrap; margin:14px 0; }
+  .btn-info { background:#1565C0; color:#fff; }
+  .btn-info:hover { background:#0D47A1; }
+  .btn-purple { background:#6A1B9A; color:#fff; }
+  .btn-purple:hover { background:#4A148C; }
+  .math-callout {
+    background:#F7FAFF; border:1px solid #C8D8EF; border-left:4px solid #1F3A5F;
+    border-radius:8px; padding:12px 14px; margin:14px 0; line-height:1.6; font-size:14px;
+  }
+  .math-formula { font-family:'Cambria Math','Times New Roman',serif; font-size:18px; color:#1F3A5F; display:block; margin:4px 0; }
+  .modal-backdrop { display:none; position:fixed; inset:0; background:rgba(5,15,30,.62); z-index:1000; align-items:center; justify-content:center; padding:18px; }
+  .modal-backdrop.visible { display:flex; }
+  .modal-card { background:#fff; color:#222; width:min(920px, 96vw); max-height:90vh; overflow:auto; border-radius:14px; box-shadow:0 24px 80px rgba(0,0,0,.35); border-top:8px solid #1F3A5F; }
+  .modal-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 22px; border-bottom:1px solid #E0E6EE; background:#F4F7FB; }
+  .modal-header h2 { font-size:20px; color:#1F3A5F; margin:0; }
+  .modal-body { padding:20px 22px; line-height:1.7; font-size:15px; }
+  .modal-body h3 { color:#1F3A5F; margin:18px 0 6px; }
+  .modal-body code { background:#F1F5F9; padding:2px 5px; border-radius:4px; font-family:Consolas,Monaco,monospace; }
+  .modal-close { background:#607D8B; color:white; padding:8px 12px; border-radius:8px; }
+  .table-compact { width:100%; border-collapse:collapse; margin:10px 0; font-size:14px; }
+  .table-compact th, .table-compact td { border:1px solid #E0E6EE; padding:8px; text-align:left; vertical-align:top; }
+  .table-compact th { background:#F4F7FB; color:#1F3A5F; }
+  .collision-warning { background:#FFF4CE; border:2px solid #E0A800; color:#5A4600; }
+  .frame-bit.flipped { text-decoration: line-through; text-decoration-thickness: 3px; }
+  .frame-bit.flipped::after { content:'✕'; position:absolute; top:-9px; right:-7px; background:#C62828; color:white; border-radius:999px; font-size:11px; width:17px; height:17px; display:flex; align-items:center; justify-content:center; }
+  .status-pill { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:5px 10px; background:#E8F0FE; color:#1F3A5F; font-size:12px; font-weight:700; margin:3px 6px 3px 0; }
+  @media (max-width:700px){ .modal-card{width:100%; max-height:92vh;} .modal-header{padding:14px;} .modal-body{padding:14px; font-size:14px;} .math-formula{font-size:16px;} }
+
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🔍 Simulatore CRC v3.5</h1>
+    <p>Sistemi e Reti - 3ª ITIS – Lezione interattiva sul CRC, con validazione matematica e strumenti per laboratorio</p>
+  </header>
+
+  <main>
+
+    <!-- =============== SEZIONE 1: INPUT =============== -->
+    <div class="section">
+      <div class="section-header"><span class="num">1</span> Inserisci messaggio e generatore</div>
+      <div class="section-body">
+        <div class="top-action-bar">
+          <button class="btn-info" type="button" id="btnOpenMath">📐 Matematica del CRC</button>
+          <button class="btn-secondary" type="button" id="btnExportExercise">⬇ Esporta esercizio TXT</button>
+        </div>
+        <div class="math-callout">
+          <strong>Formula di costruzione del frame:</strong>
+          <span class="math-formula">T(x) = M(x) · xⁿ ⊕ CRC(x)</span>
+          <span>Operativamente: <strong>T = M seguito dal CRC</strong>. Gli zeri aggiunti in coda servono solo per calcolare il resto.</span>
+        </div>
+        <div class="input-row">
+          <div class="input-group">
+            <label for="message">Messaggio M (binario)</label>
+            <input type="text" id="message" value="1101" maxlength="128" placeholder="es. 1101">
+            <div class="hint">Solo 0 e 1 — max 128 bit. È possibile usare anche messaggi con grado minore di G(x).</div>
+            <div class="polynomial-display" id="mpoly">M(x) = x³ + x² + 1</div>
+          </div>
+          <div class="input-group">
+            <label for="generator">Polinomio generatore G (binario)</label>
+            <input type="text" id="generator" value="1011" maxlength="65" placeholder="es. 1011">
+            <div class="hint">Deve iniziare con 1 — max 65 bit. Per CRC-32 il generatore ha 33 bit.</div>
+            <div class="polynomial-display" id="gpoly">G(x) = x³ + x + 1</div>
+          </div>
+        </div>
+
+        <div>
+          <strong style="font-size: 13px; color: #555;">Esempi rapidi:</strong>
+          <div class="examples">
+            <span class="example-chip" data-m="1101" data-g="1011">Lezione (M=1101, G=1011)</span>
+            <span class="example-chip" data-m="1010" data-g="1101">Esercizio corretto (M=1010, G=1101)</span>
+            <span class="example-chip" data-m="11010011101100" data-g="1011">CRC-3 didattico</span>
+            <span class="example-chip" data-m="101100101" data-g="100000111">CRC-8 didattico</span>
+            <span class="example-chip real" data-m="1101001110110010101111001101110010101011" data-g="100000100110000010001110110110111" data-speed="120">CRC-32 Ethernet reale</span>
+          </div>
+        </div>
+
+        <div class="generator-guide">
+          <h3>Come viene scelto il polinomio generatore G(x)?</h3>
+          <p>Nel simulatore puoi scrivere qualsiasi generatore binario valido per fare esercizio. Nelle reti reali, però, <strong>G(x) non viene scelto dallo studente, dal programmatore o dalla scheda di rete</strong>: è fissato da uno standard tecnico.</p>
+          <ul>
+            <li>Il primo bit deve essere <code>1</code>, perché indica il termine di grado massimo.</li>
+            <li>Il grado di <code>G(x)</code> determina il numero di bit del CRC: grado 3 → CRC di 3 bit; grado 32 → CRC di 32 bit.</li>
+            <li>Un buon generatore è progettato per rilevare molti tipi di errore: errori su un singolo bit, su due bit, errori con numero dispari di bit alterati e raffiche di errore.</li>
+            <li>Per questo Ethernet usa un polinomio standard CRC-32, molto più robusto dei piccoli generatori didattici.</li>
+          </ul>
+          <div class="standard-box">
+            <strong>CRC-32 Ethernet, forma normale non riflessa:</strong><br>
+            <span class="poly-formula">G(x) = x<sup>32</sup> + x<sup>26</sup> + x<sup>23</sup> + x<sup>22</sup> + x<sup>16</sup> + x<sup>12</sup> + x<sup>11</sup> + x<sup>10</sup> + x<sup>8</sup> + x<sup>7</sup> + x<sup>5</sup> + x<sup>4</sup> + x<sup>2</sup> + x + 1</span><br>
+            <strong>Bit del generatore usati dal simulatore:</strong><br>
+            <code>100000100110000010001110110110111</code><br>
+            <em>Nota didattica:</em> il simulatore mostra la divisione modulo 2 nella forma scolastica. Le implementazioni reali possono usare registri a scorrimento, bit riflessi, valore iniziale e XOR finale. Il principio rimane: il FCS contiene un CRC di 32 bit.
+          </div>
+        </div>
+
+        <div id="errorBox"></div>
+
+        <div class="button-row">
+          <button class="btn-primary" id="btnCalculate">▶ Calcola CRC e simula</button>
+          <button class="btn-purple" id="btnCalculateFast">⚡ Calcola e vai alla fine</button>
+          <button class="btn-secondary" id="btnReset">↺ Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =============== SEZIONE 2: CALCOLO TRASMETTITORE =============== -->
+    <div class="section" id="section-tx" style="display:none;">
+      <div class="section-header"><span class="num">2</span> Lato trasmettitore: calcolo del CRC</div>
+      <div class="section-body">
+        <div class="info-box">
+          Il trasmettitore aggiunge <strong id="numZeros">3</strong> zeri al messaggio
+          (perché il grado di G(x) è <strong id="degG">3</strong>) e poi divide
+          il risultato per G(x) usando lo XOR. Il <strong>resto</strong> della divisione è il CRC.
+        </div>
+
+        <div class="controls">
+          <label>Velocità animazione:</label>
+          <input type="range" min="100" max="1500" value="700" class="speed-slider" id="speedSlider">
+          <span id="speedValue" style="font-size: 13px; color: #555;">700ms</span>
+        </div>
+
+        <div class="division-board sticky-board" id="txBoard">
+          <div class="board-toolbar">
+            <h3>Lavagna dinamica unica della divisione modulo 2</h3>
+            <span class="board-counter" id="txBoardCounter">Passo 0/0</span>
+            <div class="board-mini-buttons">
+              <button type="button" id="txBoardFirst" aria-label="Vai al primo passaggio della divisione">⏮ Primo passaggio</button>
+              <button type="button" id="txBoardPrev" aria-label="Vai al passo precedente">◀ Passo precedente</button>
+              <button type="button" id="txBoardNext" aria-label="Vai al passo successivo">Passo successivo ▶</button>
+              <button type="button" id="txBoardEnd" aria-label="Vai all'ultimo passaggio della divisione">⏭ Ultimo passaggio</button>
+            </div>
+          </div>
+          <div class="board-subtitle">La finestra gialla indica il blocco corrente. Se il primo bit è 1 si esegue XOR con G; se è 0 non si esegue XOR e si prosegue abbassando/scorrendo al bit successivo.</div>
+          <div class="division-canvas" id="txDivisionCanvas"></div>
+          <div class="board-explanation" id="txBoardExplanation">Premi “Calcola CRC e simula”.</div>
+        </div>
+
+        <div class="steps-container" id="txSteps"></div>
+
+        <div id="crcResult" style="display:none; margin-top: 20px;">
+          <div class="info-box" style="background: #E6F4EA; border-color: #2E7D32;">
+            ✅ <strong>CRC calcolato:</strong> <span id="crcValue" style="font-family: Consolas, monospace; font-size: 18px;"></span>
+          </div>
+          <div class="button-row" style="margin-top: 8px;">
+            <button class="btn-secondary" type="button" id="btnTxGoBoard">↑ Vai alla lavagna interattiva dal primo passaggio</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =============== SEZIONE 3: FRAME TRASMESSO =============== -->
+    <div class="section" id="section-frame" style="display:none;">
+      <div class="section-header"><span class="num">3</span> Frame trasmesso sul canale</div>
+      <div class="section-body">
+        <p style="margin-bottom: 12px; color: #555;">
+          Il frame finale è il messaggio originale <strong>M</strong> seguito dal <strong>CRC</strong>.
+          <br>
+          <strong style="color: #C62828;">Clicca sui bit per simulare un errore di trasmissione</strong> (rumore, interferenze).
+        </p>
+
+        <div class="frame-display" id="frameDisplay"></div>
+
+        <div class="frame-legend">
+          <div class="legend-item">
+            <span class="legend-swatch" style="background:#E8F0FE; border-color:#2E5C8A;"></span>
+            Bit del messaggio
+          </div>
+          <div class="legend-item">
+            <span class="legend-swatch" style="background:#FFF4CE; border-color:#E0C95C;"></span>
+            Bit del CRC
+          </div>
+          <div class="legend-item">
+            <span class="legend-swatch" style="background:#FFE2E2; border-color:#C62828;"></span>
+            Bit alterato
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button class="btn-danger" id="btnFlipRandom">⚡ Altera 1 bit casuale</button>
+          <button class="btn-danger" id="btnBurstError">💥 Errore a raffica</button>
+          <button class="btn-secondary" id="btnRestoreFrame">↺ Ripristina frame integro</button>
+          <button class="btn-success" id="btnVerify">📥 Ricevi e verifica</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =============== SEZIONE 4: VERIFICA RICEVITORE =============== -->
+    <div class="section" id="section-rx" style="display:none;">
+      <div class="section-header"><span class="num">4</span> Lato ricevitore: verifica del frame</div>
+      <div class="section-body">
+        <div class="info-box">
+          Il ricevitore prende l'intero frame ricevuto e lo divide per lo stesso G(x).
+          Se il resto è <strong>tutto zero</strong> → frame corretto. Altrimenti → frame scartato.
+        </div>
+
+        <div class="division-board sticky-board" id="rxBoard">
+          <div class="board-toolbar">
+            <h3>Lavagna dinamica unica della verifica in ricezione</h3>
+            <span class="board-counter" id="rxBoardCounter">Passo 0/0</span>
+            <div class="board-mini-buttons">
+              <button type="button" id="rxBoardFirst" aria-label="Vai al primo passaggio della divisione">⏮ Primo passaggio</button>
+              <button type="button" id="rxBoardPrev" aria-label="Vai al passo precedente">◀ Passo precedente</button>
+              <button type="button" id="rxBoardNext" aria-label="Vai al passo successivo">Passo successivo ▶</button>
+              <button type="button" id="rxBoardEnd" aria-label="Vai all'ultimo passaggio della divisione">⏭ Ultimo passaggio</button>
+              <button type="button" id="rxBoardVerdict">↓ Vai al verdetto</button>
+            </div>
+          </div>
+          <div class="board-subtitle">Il ricevitore divide tutto il frame T per lo stesso generatore P/G. Se il resto finale è 000...0, il frame viene accettato.</div>
+          <div class="division-canvas" id="rxDivisionCanvas"></div>
+          <div class="board-explanation" id="rxBoardExplanation">Premi “Ricevi e verifica”.</div>
+        </div>
+
+        <div class="steps-container" id="rxSteps"></div>
+
+        <div id="verdict"></div>
+      </div>
+    </div>
+
+
+    <div class="modal-backdrop" id="mathModal" role="dialog" aria-modal="true" aria-labelledby="mathModalTitle">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="mathModalTitle">Matematica dell’algoritmo CRC</h2>
+          <button type="button" class="modal-close" id="btnCloseMath">Chiudi</button>
+        </div>
+        <div class="modal-body">
+          <p>Il CRC interpreta le sequenze binarie come polinomi con coefficienti 0 e 1. Tutte le somme avvengono in modulo 2: in pratica, si usa lo <strong>XOR</strong>.</p>
+          <h3>1. Oggetti matematici</h3>
+          <table class="table-compact">
+            <tr><th>Simbolo</th><th>Significato</th></tr>
+            <tr><td><code>M(x)</code></td><td>Polinomio del messaggio originale.</td></tr>
+            <tr><td><code>G(x)</code></td><td>Polinomio generatore, noto sia al trasmettitore sia al ricevitore.</td></tr>
+            <tr><td><code>n</code></td><td>Grado di <code>G(x)</code>. È anche il numero di bit del CRC.</td></tr>
+            <tr><td><code>M'(x)=M(x)·xⁿ</code></td><td>Messaggio con <code>n</code> zeri aggiunti in coda, usato solo per il calcolo.</td></tr>
+            <tr><td><code>CRC(x)</code></td><td>Resto della divisione modulo 2 di <code>M'(x)</code> per <code>G(x)</code>.</td></tr>
+            <tr><td><code>T(x)</code></td><td>Frame finale trasmesso.</td></tr>
+          </table>
+          <h3>2. Formula del CRC</h3>
+          <p><span class="math-formula">CRC(x) = [M(x) · xⁿ] mod G(x)</span></p>
+          <p>Il CRC è quindi il resto della divisione binaria modulo 2.</p>
+          <h3>3. Formula del frame trasmesso</h3>
+          <p><span class="math-formula">T(x) = M(x) · xⁿ ⊕ CRC(x)</span></p>
+          <p>Il simbolo <strong>⊕</strong> indica XOR. Operativamente il risultato appare come <strong>M seguito dal CRC</strong>, perché gli zeri finali di <code>M(x)·xⁿ</code> vengono sostituiti dal resto.</p>
+          <h3>4. Controllo in ricezione</h3>
+          <p><span class="math-formula">T(x) mod G(x) = 0</span></p>
+          <p>Se il resto è tutto zero, il frame viene accettato. Se il resto è diverso da zero, il frame viene scartato.</p>
+         <h3>5. Vincolo didattico adottato nel simulatore</h3>
+	<p>
+	Il simulatore accetta qualsiasi messaggio binario valido.
+	Quando <strong>grado M(x) &lt; grado G(x)</strong>
+	oppure M è tutto zero,
+	il calcolo procede comunque ma viene mostrato un avviso didattico:
+	questi casi sono matematicamente legittimi ma spesso risultano meno istruttivi in un esercizio introduttivo.
+	</p>
+          <h3>6. Collisione CRC</h3>
+          <p>È possibile, anche se raro, che un frame alterato produca comunque resto zero. In quel caso si parla di errore non rilevato o collisione CRC. Con un CRC-32 reale, per errori casuali, l’ordine di grandezza della probabilità è circa <strong>1 su 2³²</strong>.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- =============== SEZIONE: ESEMPI VERIFICATI =============== -->
+    <div class="section verified-section">
+      <div class="section-header"><span class="num">✓</span> Esempi verificati di correttezza</div>
+      <div class="section-body">
+        <p style="margin-bottom: 14px; font-size: 14px;">
+          I seguenti casi di test sono stati verificati indipendentemente e devono produrre i risultati indicati.
+          Servono come <strong>prova di correttezza dell'algoritmo</strong> per chiunque voglia replicare o validare
+          il simulatore. Puoi caricarli rapidamente cliccando "Carica".
+        </p>
+        <table class="verified-table">
+          <thead>
+            <tr>
+              <th>Messaggio M</th>
+              <th>Generatore G</th>
+              <th>CRC atteso</th>
+              <th>Frame trasmesso</th>
+              <th>Fonte</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>1101</code></td>
+              <td><code>1011</code></td>
+              <td><code>001</code></td>
+              <td><code>1101001</code></td>
+              <td>Lezione standard (CRC-3 didattico)</td>
+              <td><button class="verify-btn" data-m="1101" data-g="1011">Carica</button></td>
+            </tr>
+            <tr>
+              <td><code>1010</code></td>
+              <td><code>1101</code></td>
+              <td><code>001</code></td>
+              <td><code>1010001</code></td>
+              <td>Esercizio guidato (CRC-3 didattico)</td>
+              <td><button class="verify-btn" data-m="1010" data-g="1101">Carica</button></td>
+            </tr>
+            <tr>
+              <td><code>11010011101100</code></td>
+              <td><code>1011</code></td>
+              <td><code>100</code></td>
+              <td><code>11010011101100100</code></td>
+              <td>Wikipedia &mdash; Cyclic redundancy check</td>
+              <td><button class="verify-btn" data-m="11010011101100" data-g="1011">Carica</button></td>
+            </tr>
+            <tr>
+              <td><code>10110010</code></td>
+              <td><code>100000111</code></td>
+              <td><code>00010111</code></td>
+              <td><code>1011001000010111</code></td>
+              <td>CRC-8 ATM (1 byte)</td>
+              <td><button class="verify-btn" data-m="10110010" data-g="100000111">Carica</button></td>
+            </tr>
+            <tr>
+              <td><code>1111111111111111</code></td>
+              <td><code>10011</code></td>
+              <td><code>0011</code></td>
+              <td><code>11111111111111110011</code></td>
+              <td>CRC-4 ITU su pattern di soli "1"</td>
+              <td><button class="verify-btn" data-m="1111111111111111" data-g="10011">Carica</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="info-box" style="margin-top: 16px; font-size: 13px;">
+          <strong>📐 Polinomio CRC-32 IEEE 802.3 (Ethernet):</strong> il simulatore usa
+          la forma non riflessa <code>100000100110000010001110110110111</code> (33 bit),
+          corrispondente a <span class="poly-formula">x<sup>32</sup> + x<sup>26</sup> + x<sup>23</sup> + x<sup>22</sup> + x<sup>16</sup> + x<sup>12</sup> + x<sup>11</sup> + x<sup>10</sup> + x<sup>8</sup> + x<sup>7</sup> + x<sup>5</sup> + x<sup>4</sup> + x<sup>2</sup> + x + 1</span>.
+          Verificato bit per bit contro lo standard IEEE 802.3.
+        </div>
+      </div>
+    </div>
+
+  </main>
+<button type="button" class="mobile-jump" onclick="(document.querySelector('#section-rx[style*=\'block\'] #rxBoard') || document.querySelector('#section-tx[style*=\'block\'] #txBoard') || document.getElementById('txBoard')).scrollIntoView({behavior:'smooth', block:'start'});">↑ Lavagna</button>
+
+ <footer>
+  <div style="margin-bottom: 8px;">
+    <strong>Simulatore CRC v3.5</strong> - Simulatore didattico per lo studio dei Codici di Ridondanza Ciclica (CRC), con validazione matematica, divisione modulo 2, burst error, esportazione risultati e accessibilità WCAG-AA
+  </div>
+
+  <div style="margin-bottom: 6px;">
+    Autore:
+    <strong>Domenico Capano</strong>
+    —
+    <a href="https://www.learningobjects.org"
+       target="_blank"
+       rel="noopener"
+       style="color:#1F3A5F; font-weight:bold;">
+       LearningObjects.org
+    </a>
+    &middot; Anno: 2026
+    &middot; Sistemi e Reti, 3ª ITIS
+  </div>
+
+  <div style="margin-bottom: 6px; font-size: 12px;">
+    Copyright © 2026 Domenico Capano.
+    Utilizzo consentito esclusivamente per finalità didattiche, educative e formative.
+  </div>
+</footer>
+</div>
+
+<script>
+// ============================================================
+//   UTILITY: conversione bit ↔ polinomio
+// ============================================================
+function bitsToPolynomial(bits) {
+  if (!bits || !/^[01]+$/.test(bits)) return "—";
+  const len = bits.length;
+  const terms = [];
+  for (let i = 0; i < len; i++) {
+    if (bits[i] === '1') {
+      const power = len - 1 - i;
+      if (power === 0) terms.push("1");
+      else if (power === 1) terms.push("x");
+      else terms.push("x" + toSuperscript(power));
+    }
+  }
+  if (terms.length === 0) return "0";
+  return terms.join(" + ");
+}
+
+function toSuperscript(n) {
+  const map = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹' };
+  return String(n).split('').map(d => map[d]).join('');
+}
+
+// ============================================================
+//   AGGIORNAMENTO POLINOMI IN TEMPO REALE
+// ============================================================
+const messageInput = document.getElementById('message');
+const generatorInput = document.getElementById('generator');
+const mpolyDisplay = document.getElementById('mpoly');
+const gpolyDisplay = document.getElementById('gpoly');
+
+function updatePolynomials() {
+  const m = messageInput.value;
+  const g = generatorInput.value;
+  mpolyDisplay.textContent = "M(x) = " + bitsToPolynomial(m);
+  gpolyDisplay.textContent = "G(x) = " + bitsToPolynomial(g);
+}
+messageInput.addEventListener('input', updatePolynomials);
+generatorInput.addEventListener('input', updatePolynomials);
+updatePolynomials();
+
+// ============================================================
+//   ESEMPI RAPIDI
+// ============================================================
+document.querySelectorAll('.example-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    messageInput.value = chip.dataset.m;
+    generatorInput.value = chip.dataset.g;
+    if (chip.dataset.speed && typeof speedSlider !== 'undefined') {
+      speedSlider.value = chip.dataset.speed;
+      stepDelay = parseInt(chip.dataset.speed, 10);
+      speedValue.textContent = stepDelay + "ms";
+    }
+    updatePolynomials();
+    document.getElementById('errorBox').innerHTML = '';
+  });
+});
+
+// ============================================================
+//   BOTTONI "CARICA" della tabella Esempi verificati
+// ============================================================
+document.querySelectorAll('.verify-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    messageInput.value = btn.dataset.m;
+    generatorInput.value = btn.dataset.g;
+    updatePolynomials();
+    document.getElementById('errorBox').innerHTML = '';
+    // Scroll al campo input per dare feedback visivo
+    document.getElementById('message').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Mette focus sul bottone di calcolo per accessibilità da tastiera
+    setTimeout(() => document.getElementById('btnCalculate').focus(), 600);
+  });
+});
+
+// ============================================================
+//   CONTROLLO VELOCITÀ
+// ============================================================
+const speedSlider = document.getElementById('speedSlider');
+const speedValue = document.getElementById('speedValue');
+let stepDelay = 700;
+let skipNextAnimation = false;
+speedSlider.addEventListener('input', () => {
+  stepDelay = parseInt(speedSlider.value);
+  speedValue.textContent = stepDelay + "ms";
+});
+
+// ============================================================
+//   VALIDAZIONE INPUT
+// ============================================================
+function validateInputs() {
+  const errorBox = document.getElementById('errorBox');
+  errorBox.innerHTML = '';
+  const m = messageInput.value.trim();
+  const g = generatorInput.value.trim();
+
+  if (!/^[01]+$/.test(m)) {
+    errorBox.innerHTML = '<div class="error-msg">⚠️ Il messaggio M deve contenere solo 0 e 1.</div>';
+    return null;
+  }
+  if (!/^[01]+$/.test(g)) {
+    errorBox.innerHTML = '<div class="error-msg">⚠️ Il generatore G deve contenere solo 0 e 1.</div>';
+    return null;
+  }
+  if (g[0] !== '1') {
+    errorBox.innerHTML = '<div class="error-msg">⚠️ Il generatore G deve iniziare con 1 (il bit più significativo del polinomio non può essere 0).</div>';
+    return null;
+  }
+  if (g.length < 2) {
+    errorBox.innerHTML = '<div class="error-msg">⚠️ Il generatore G deve avere almeno 2 bit.</div>';
+    return null;
+  }
+  if (g[g.length - 1] !== '1') {
+    errorBox.innerHTML = '<div class="error-msg">⚠️ Il generatore G deve terminare con 1: un generatore che termina con 0 avrebbe un fattore x e non è adatto alla spiegazione CRC.</div>';
+    return null;
+  }
+  // M tutto zero: ora permesso (caso matematico legittimo). Mostriamo solo una nota informativa.
+  let warning = '';
+  if (!m.includes('1')) {
+    warning += '<div class="warning-msg">ℹ️ Caso particolare: M è tutto zero. Il CRC sarà tutto zero (proprietà matematica del CRC).</div>';
+  }
+  const degreeM = m.includes('1') ? (m.length - 1 - m.indexOf('1')) : 0;
+  const degreeG = g.length - 1; // G è validato con primo bit = 1
+  if (degreeM < degreeG && m.includes('1')) {
+    warning += '<div class="warning-msg">ℹ️ Nota didattica: grado M(x) = ' + degreeM + ' &lt; grado G(x) = ' + degreeG + '. La divisione sarà degenere (nessun XOR effettivo, CRC = M con zeri aggiunti). Per un esercizio più ricco, usa un messaggio più lungo. Procedo comunque con il calcolo.</div>';
+  }
+  if (warning) {
+    errorBox.innerHTML = warning;
+  }
+  return { m, g, degreeM, degreeG };
+}
+
+// ============================================================
+//   ALGORITMO CRC: divisione binaria modulo 2 con tracciamento
+// ============================================================
+function computeCRCWithTrace(message, generator) {
+  // Append n zeros where n = generator.length - 1
+  const n = generator.length - 1;
+  const padded = message + '0'.repeat(n);
+  const dividend = padded.split('').map(c => parseInt(c));
+  const divisor  = generator.split('').map(c => parseInt(c));
+  const trace = []; // each step: { snapshot, divisor_pos, action, bit_just_dropped }
+
+  // Snapshot inicial
+  trace.push({
+    type: 'init',
+    dividend: padded,
+    note: `Messaggio + ${n} zeri = ${padded}`
+  });
+
+  let workIdx = 0; // index of current leading bit being considered
+
+  while (workIdx <= dividend.length - divisor.length) {
+    if (dividend[workIdx] === 1) {
+      // XOR with divisor
+      const before = dividend.slice().join('');
+      for (let j = 0; j < divisor.length; j++) {
+        dividend[workIdx + j] ^= divisor[j];
+      }
+      const after = dividend.slice().join('');
+      trace.push({
+        type: 'xor',
+        before,
+        after,
+        divisorPos: workIdx,
+        divisor: generator
+      });
+    } else {
+      // Skip: leading bit is 0
+      trace.push({
+        type: 'skip',
+        snapshot: dividend.slice().join(''),
+        skipPos: workIdx
+      });
+    }
+    workIdx++;
+  }
+
+  // Remainder = last n bits
+  const remainder = dividend.slice(-n).join('');
+  trace.push({
+    type: 'final',
+    remainder,
+    fullDividend: dividend.join('')
+  });
+
+  return { crc: remainder, trace };
+}
+
+// ============================================================
+//   RENDERING DEI PASSAGGI
+// ============================================================
+function renderBitRow(label, bits, options = {}) {
+  let html = `<div class="bit-row"><span class="label-cell">${label}</span>`;
+  for (let i = 0; i < bits.length; i++) {
+    let cls = 'bit';
+    if (options.dimBefore !== undefined && i < options.dimBefore) cls += ' dim';
+    if (options.dimAfter !== undefined && i >= options.dimAfter) cls += ' dim';
+    if (options.divisorRange && i >= options.divisorRange[0] && i < options.divisorRange[1]) {
+      cls += ' divisor';
+    }
+    if (options.resultRange && i >= options.resultRange[0] && i < options.resultRange[1]) {
+      cls += ' result';
+    }
+    if (options.droppedAt !== undefined && i === options.droppedAt) cls += ' dropped';
+    html += `<span class="${cls}">${bits[i]}</span>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+
+// ============================================================
+//   LAVAGNA DINAMICA UNICA: finestra, XOR, abbassamento bit
+// ============================================================
+const boardStates = {
+  tx: { trace: [], generator: '', index: 0 },
+  rx: { trace: [], generator: '', index: 0 }
+};
+
+function boardPrefixFromContainer(containerId) {
+  return containerId === 'rxSteps' ? 'rx' : 'tx';
+}
+
+function getLastDividendBefore(trace, idx) {
+  for (let i = idx; i >= 0; i--) {
+    const s = trace[i];
+    if (s.after) return s.after;
+    if (s.snapshot) return s.snapshot;
+    if (s.before) return s.before;
+    if (s.dividend) return s.dividend;
+    if (s.fullDividend) return s.fullDividend;
+  }
+  return '';
+}
+
+function renderBoardBits(bits, classesByIndex = {}) {
+  let html = '<div class="board-bits">';
+  for (let i = 0; i < bits.length; i++) {
+    const ch = bits[i] === ' ' ? '&nbsp;' : bits[i];
+    const cls = classesByIndex[i] ? ' ' + classesByIndex[i] : '';
+    html += `<span class="board-bit${bits[i] === ' ' ? ' blank' : ''}${cls}">${ch}</span>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function paddedDivisor(generator, pos, totalLen) {
+  let out = '';
+  for (let i = 0; i < totalLen; i++) {
+    if (i >= pos && i < pos + generator.length) out += generator[i - pos];
+    else out += ' ';
+  }
+  return out;
+}
+
+function buildClassMap(start, end, cls) {
+  const map = {};
+  for (let i = start; i < end; i++) map[i] = cls;
+  return map;
+}
+
+function renderUnifiedDivisionBoard(prefix) {
+  const state = boardStates[prefix];
+  const trace = state.trace;
+  const generator = state.generator;
+  const idx = state.index;
+  const canvas = document.getElementById(prefix + 'DivisionCanvas');
+  const explanation = document.getElementById(prefix + 'BoardExplanation');
+  const counter = document.getElementById(prefix + 'BoardCounter');
+  if (!canvas || !explanation || !counter || !trace.length) return;
+
+  const step = trace[idx];
+  const total = trace.length;
+  counter.textContent = `Passo ${idx + 1}/${total}`;
+
+  let html = '';
+  let text = '';
+  const gLen = generator.length;
+
+  if (step.type === 'init') {
+    const bits = step.dividend;
+    const n = gLen - 1;
+    const remStart = bits.length - n;
+    const classes = buildClassMap(remStart, bits.length, 'lowered');
+    html += `<div class="board-row"><div class="board-label">M'</div>${renderBoardBits(bits, classes)}</div>`;
+    text = `<strong>Preparazione.</strong> Il trasmettitore aggiunge ${n} zeri al messaggio. Questi zeri creano lo spazio in cui finirà il resto, cioè il CRC. La divisione vera inizierà dal primo blocco lungo quanto G.`;
+  } else if (step.type === 'xor') {
+    const before = step.before;
+    const after = step.after;
+    const pos = step.divisorPos;
+    const winClasses = buildClassMap(pos, Math.min(pos + gLen, before.length), 'window');
+    winClasses[pos] = 'lead-one';
+    const divBits = paddedDivisor(generator, pos, before.length);
+    const divClasses = buildClassMap(pos, Math.min(pos + gLen, before.length), 'divisor-cell');
+    const resClasses = buildClassMap(pos, Math.min(pos + gLen, after.length), 'result-cell');
+    const nextBit = pos + gLen;
+    if (nextBit < before.length) resClasses[nextBit] = (resClasses[nextBit] ? resClasses[nextBit] + ' ' : '') + 'lowered';
+
+    html += `<div class="board-row"><div class="board-label">dividendo</div>${renderBoardBits(before, winClasses)}</div>`;
+    html += `<div class="board-row"><div class="board-label">XOR G</div>${renderBoardBits(divBits, divClasses)}</div>`;
+    html += `<div class="board-separator"></div>`;
+    html += `<div class="board-row"><div class="board-label">risultato</div>${renderBoardBits(after, resClasses)}</div>`;
+    text = `<strong>Bit guida = 1.</strong> Il generatore “entra” nel blocco corrente, quindi si esegue XOR con G. Dopo lo XOR il primo bit del blocco viene annullato. ${nextBit < before.length ? 'Il bit evidenziato in giallo è il prossimo bit che viene abbassato/scorso per continuare la divisione.' : 'Non ci sono altri bit da abbassare: ci si avvicina al resto finale.'}`;
+  } else if (step.type === 'skip') {
+    const bits = step.snapshot;
+    const pos = step.skipPos;
+    const winClasses = buildClassMap(pos, Math.min(pos + gLen, bits.length), 'window');
+    winClasses[pos] = 'lead-zero';
+    const nextBit = pos + gLen;
+    if (nextBit < bits.length) winClasses[nextBit] = (winClasses[nextBit] ? winClasses[nextBit] + ' ' : '') + 'lowered';
+    html += `<div class="board-row"><div class="board-label">dividendo</div>${renderBoardBits(bits, winClasses)}</div>`;
+    html += `<div class="board-row"><div class="board-label">azione</div><div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:#B71C1C;font-weight:700;">Non faccio XOR: il blocco corrente parte da 0</div></div>`;
+    text = `<strong>Bit guida = 0.</strong> Il generatore non “entra” in questo punto. Come nella divisione lunga, si prosegue abbassando/scorrendo al bit successivo. In pratica si scrive 0 nel quoziente e si continua; per il CRC il quoziente non ci interessa, interessa solo il resto.`;
+  } else if (step.type === 'final') {
+    const bits = step.fullDividend;
+    const n = gLen - 1;
+    const start = bits.length - n;
+    const classes = buildClassMap(start, bits.length, 'remainder-cell');
+    html += `<div class="board-row"><div class="board-label">finale</div>${renderBoardBits(bits, classes)}</div>`;
+    text = `<strong>Resto finale = ${step.remainder}.</strong> Gli ultimi ${n} bit sono il resto. In trasmissione questo resto è il CRC da aggiungere a M; in ricezione il resto deve essere tutto zero.`;
+  }
+
+  canvas.innerHTML = html;
+  explanation.innerHTML = text + `<div class="board-rule"><strong>Regola:</strong> divisione modulo 2 = divisione binaria lunga senza prestiti; al posto della sottrazione si usa XOR.</div>`;
+}
+
+function setupBoard(prefix, trace, generator) {
+  boardStates[prefix] = { trace, generator, index: 0 };
+  renderUnifiedDivisionBoard(prefix);
+}
+
+function moveBoard(prefix, delta) {
+  const state = boardStates[prefix];
+  if (!state.trace.length) return;
+  state.index = Math.max(0, Math.min(state.trace.length - 1, state.index + delta));
+  renderUnifiedDivisionBoard(prefix);
+}
+
+function setBoardIndex(prefix, index) {
+  const state = boardStates[prefix];
+  if (!state.trace.length) return;
+  state.index = Math.max(0, Math.min(state.trace.length - 1, index));
+  renderUnifiedDivisionBoard(prefix);
+}
+
+function scrollToElementById(id, block = 'start') {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block });
+}
+
+document.getElementById('txBoardFirst').addEventListener('click', () => setBoardIndex('tx', 0));
+document.getElementById('txBoardPrev').addEventListener('click', () => moveBoard('tx', -1));
+document.getElementById('txBoardNext').addEventListener('click', () => moveBoard('tx', 1));
+document.getElementById('txBoardEnd').addEventListener('click', () => setBoardIndex('tx', boardStates.tx.trace.length - 1));
+document.getElementById('rxBoardFirst').addEventListener('click', () => setBoardIndex('rx', 0));
+document.getElementById('rxBoardPrev').addEventListener('click', () => moveBoard('rx', -1));
+document.getElementById('rxBoardNext').addEventListener('click', () => moveBoard('rx', 1));
+document.getElementById('rxBoardEnd').addEventListener('click', () => setBoardIndex('rx', boardStates.rx.trace.length - 1));
+document.getElementById('rxBoardVerdict').addEventListener('click', () => scrollToElementById('verdict', 'center'));
+const txGoBoardBtn = document.getElementById('btnTxGoBoard');
+if (txGoBoardBtn) {
+  txGoBoardBtn.addEventListener('click', () => {
+    setBoardIndex('tx', 0);
+    scrollToElementById('txBoard', 'start');
+  });
+}
+
+function renderTrace(trace, generator, containerId) {
+  const prefix = boardPrefixFromContainer(containerId);
+  setupBoard(prefix, trace, generator);
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  const gLen = generator.length;
+  const stepEls = [];
+
+  trace.forEach((step, idx) => {
+    const div = document.createElement('div');
+    div.className = 'step';
+
+    if (step.type === 'init') {
+      div.innerHTML = `
+        <div class="step-title">Passo iniziale</div>
+        <div style="font-family:sans-serif; font-size:13px; color:#555; margin-bottom:8px;">
+          ${step.note}
+        </div>
+        ${renderBitRow('', step.dividend)}
+      `;
+    } else if (step.type === 'xor') {
+      const before = step.before;
+      const after  = step.after;
+      const pos    = step.divisorPos;
+      // Build divisor row aligned: leading spaces, then divisor bits, then trailing dim positions
+      let divisorPadded = '';
+      for (let i = 0; i < before.length; i++) {
+        if (i < pos) divisorPadded += ' ';
+        else if (i < pos + gLen) divisorPadded += generator[i - pos];
+        else divisorPadded += ' ';
+      }
+
+      div.innerHTML = `
+        <div class="step-title">Passo ${idx} — bit guida = 1, faccio XOR con G</div>
+        ${renderBitRow('', before, { divisorRange: [pos, pos + gLen] })}
+        <div style="display:flex; align-items:center; gap:0; margin: 2px 0;">
+          <span class="label-cell">XOR</span>
+          ${generateDivisorRow(generator, pos, before.length)}
+        </div>
+        <div class="separator"></div>
+        ${renderBitRow('=', after, { resultRange: [pos, pos + gLen] })}
+      `;
+    } else if (step.type === 'skip') {
+      div.innerHTML = `
+        <div class="step-title">Passo ${idx} — bit guida = 0, scrivo 0 al quoziente e proseguo</div>
+        ${renderBitRow('', step.snapshot, { droppedAt: step.skipPos })}
+      `;
+    } else if (step.type === 'final') {
+      const n = generator.length - 1;
+      const remainderStart = step.fullDividend.length - n;
+      div.innerHTML = `
+        <div class="step-title">Resto finale</div>
+        ${renderBitRow('', step.fullDividend, { resultRange: [remainderStart, step.fullDividend.length] })}
+        <div style="font-family:sans-serif; font-size:14px; color:#1F3A5F; margin-top:10px;">
+          Gli ultimi ${n} bit sono il <strong>resto</strong>: <strong style="font-family:Consolas,monospace; font-size:18px;">${step.remainder}</strong>
+        </div>
+      `;
+    }
+    container.appendChild(div);
+    stepEls.push(div);
+  });
+
+  // Animate. Se è attivo il calcolo rapido, mostra tutti i passaggi senza attesa.
+  if (skipNextAnimation) {
+    stepEls.forEach(el => el.classList.add('visible'));
+    setBoardIndex(prefix, trace.length - 1);
+    return Promise.resolve();
+  }
+
+  return new Promise(resolve => {
+    let i = 0;
+    function next() {
+      if (i >= stepEls.length) { resolve(); return; }
+      stepEls[i].classList.add('visible');
+      boardStates[prefix].index = i;
+      renderUnifiedDivisionBoard(prefix);
+      stepEls[i].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      i++;
+      setTimeout(next, stepDelay);
+    }
+    next();
+  });
+}
+
+function generateDivisorRow(generator, pos, totalLen) {
+  let html = '';
+  for (let i = 0; i < totalLen; i++) {
+    if (i < pos) html += `<span class="bit dim"> </span>`;
+    else if (i < pos + generator.length) html += `<span class="bit divisor">${generator[i - pos]}</span>`;
+    else html += `<span class="bit dim"> </span>`;
+  }
+  return html;
+}
+
+// ============================================================
+//   FRAME DISPLAY (con flip dei bit)
+// ============================================================
+let currentMessage = '';
+let currentCRC = '';
+let currentFrame = '';      // bit effettivamente trasmessi (= currentMessage + currentCRC)
+let receivedFrame = '';     // come arriva al ricevitore (può essere alterato)
+
+function renderFrame() {
+  const display = document.getElementById('frameDisplay');
+  display.innerHTML = '';
+  const totalLen = currentFrame.length;
+  const messageLen = currentMessage.length;
+
+  for (let i = 0; i < totalLen; i++) {
+    const div = document.createElement('div');
+    const isMessage = i < messageLen;
+    div.className = 'frame-bit ' + (isMessage ? 'message' : 'crc');
+    if (receivedFrame[i] !== currentFrame[i]) {
+      div.classList.add('flipped');
+    }
+    div.textContent = receivedFrame[i];
+    div.title = `Posizione ${i + 1} — ${isMessage ? 'bit del messaggio' : 'bit del CRC'} — Click per alterare`;
+
+    const posLabel = document.createElement('span');
+    posLabel.className = 'pos-label';
+    posLabel.textContent = i + 1;
+    div.appendChild(posLabel);
+
+    div.addEventListener('click', () => {
+      const arr = receivedFrame.split('');
+      arr[i] = arr[i] === '0' ? '1' : '0';
+      receivedFrame = arr.join('');
+      renderFrame();
+      // Reset eventuale verdetto precedente
+      document.getElementById('section-rx').style.display = 'none';
+    });
+    display.appendChild(div);
+  }
+}
+
+// ============================================================
+//   MODALE MATEMATICA ED EXPORT
+// ============================================================
+document.getElementById('btnOpenMath').addEventListener('click', () => {
+  document.getElementById('mathModal').classList.add('visible');
+});
+document.getElementById('btnCloseMath').addEventListener('click', () => {
+  document.getElementById('mathModal').classList.remove('visible');
+});
+document.getElementById('mathModal').addEventListener('click', (ev) => {
+  if (ev.target.id === 'mathModal') document.getElementById('mathModal').classList.remove('visible');
+});
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape') document.getElementById('mathModal').classList.remove('visible');
+});
+
+document.getElementById('btnExportExercise').addEventListener('click', () => {
+  const m = messageInput.value.trim();
+  const g = generatorInput.value.trim();
+  let text = 'SIMULATORE CRC v3.5 - ESERCIZIO\n';
+  text += 'Messaggio M: ' + m + '\n';
+  text += 'Generatore G: ' + g + '\n';
+  text += 'M(x): ' + bitsToPolynomial(m) + '\n';
+  text += 'G(x): ' + bitsToPolynomial(g) + '\n';
+  if (currentCRC) {
+    text += '\nCRC calcolato: ' + currentCRC + '\n';
+    text += 'Frame trasmesso T = M seguito dal CRC: ' + currentFrame + '\n';
+    text += 'Frame ricevuto: ' + receivedFrame + '\n';
+  } else {
+    text += '\nEseguire prima il calcolo per esportare anche CRC e frame.\n';
+  }
+  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'esercizio_crc_v3_3.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById('btnCalculateFast').addEventListener('click', () => {
+  skipNextAnimation = true;
+  document.getElementById('btnCalculate').click();
+});
+
+// ============================================================
+//   HANDLER PRINCIPALE: CALCOLA CRC
+// ============================================================
+document.getElementById('btnCalculate').addEventListener('click', async () => {
+  const inputs = validateInputs();
+  if (!inputs) return;
+
+  currentMessage = inputs.m;
+  const generator = inputs.g;
+
+  // Mostra sezione TX
+  const sectionTx = document.getElementById('section-tx');
+  sectionTx.style.display = 'block';
+  document.getElementById('numZeros').textContent = generator.length - 1;
+  document.getElementById('degG').textContent = generator.length - 1;
+
+  // Disabilita bottone durante animazione
+  const btn = document.getElementById('btnCalculate');
+  btn.disabled = true;
+  btn.textContent = '⏳ Calcolo in corso...';
+
+  document.getElementById('crcResult').style.display = 'none';
+  document.getElementById('section-frame').style.display = 'none';
+  document.getElementById('section-rx').style.display = 'none';
+
+  // Calcola CRC
+  const { crc, trace } = computeCRCWithTrace(currentMessage, generator);
+  currentCRC = crc;
+  currentFrame = currentMessage + currentCRC;
+  receivedFrame = currentFrame;
+
+  // Renderizza animazione
+  await renderTrace(trace, generator, 'txSteps');
+
+  // Mostra risultato CRC
+  document.getElementById('crcValue').textContent = crc;
+  document.getElementById('crcResult').style.display = 'block';
+
+  // Mostra frame
+  document.getElementById('section-frame').style.display = 'block';
+  renderFrame();
+
+  skipNextAnimation = false;
+  btn.disabled = false;
+  btn.textContent = '▶ Calcola CRC e simula';
+});
+
+// ============================================================
+//   FLIP RANDOM
+// ============================================================
+document.getElementById('btnFlipRandom').addEventListener('click', () => {
+  if (!currentFrame) return;
+  const arr = receivedFrame.split('');
+  const idx = Math.floor(Math.random() * arr.length);
+  arr[idx] = arr[idx] === '0' ? '1' : '0';
+  receivedFrame = arr.join('');
+  renderFrame();
+  document.getElementById('section-rx').style.display = 'none';
+});
+
+document.getElementById('btnBurstError').addEventListener('click', () => {
+  if (!currentFrame) return;
+  const arr = receivedFrame.split('');
+  const burstLen = Math.min(arr.length, Math.random() < 0.5 ? 3 : 4);
+  const start = Math.floor(Math.random() * (arr.length - burstLen + 1));
+  for (let i = start; i < start + burstLen; i++) {
+    arr[i] = arr[i] === '0' ? '1' : '0';
+  }
+  receivedFrame = arr.join('');
+  renderFrame();
+  document.getElementById('section-rx').style.display = 'none';
+});
+
+// ============================================================
+//   RESTORE FRAME
+// ============================================================
+document.getElementById('btnRestoreFrame').addEventListener('click', () => {
+  if (!currentFrame) return;
+  receivedFrame = currentFrame;
+  renderFrame();
+  document.getElementById('section-rx').style.display = 'none';
+});
+
+// ============================================================
+//   VERIFICA RICEVITORE
+// ============================================================
+document.getElementById('btnVerify').addEventListener('click', async () => {
+  const generator = generatorInput.value.trim();
+  const sectionRx = document.getElementById('section-rx');
+  sectionRx.style.display = 'block';
+
+  // Il ricevitore divide il frame intero per G; il resto deve essere zero
+  const { crc: remainder, trace } = computeCRCWithRemainder(receivedFrame, generator);
+
+  document.getElementById('verdict').innerHTML = '';
+  await renderTrace(trace, generator, 'rxSteps');
+  // Dopo il calcolo il ricevitore riporta la lavagna al primo passaggio:
+  // lo studente può iniziare la lettura dall'inizio senza premere più volte 'Passo precedente'.
+  setBoardIndex('rx', 0);
+
+  // Verdetto
+  const isAllZero = /^0+$/.test(remainder);
+  const verdictDiv = document.getElementById('verdict');
+
+  // Conta bit alterati
+  let flippedCount = 0;
+  for (let i = 0; i < currentFrame.length; i++) {
+    if (currentFrame[i] !== receivedFrame[i]) flippedCount++;
+  }
+
+  if (isAllZero) {
+    verdictDiv.innerHTML = `
+      <div class="result-box result-success">
+        <div class="result-icon">✅</div>
+        FRAME ACCETTATO
+        <div class="result-detail">
+          Resto della divisione: ${remainder} → tutto zero, quindi nessun errore rilevato.
+          ${flippedCount === 0 ? 'Il frame è effettivamente integro.' :
+            '<br><strong style="color:#8A5A00;">⚠ Collisione CRC / falso negativo:</strong> ci sono ' + flippedCount + ' bit alterati ma il resto è comunque zero. Con un CRC-32 reale, per errori casuali, la probabilità teorica è circa 1 su 2³².'}
+        </div>
+      </div>
+    `;
+  } else {
+    verdictDiv.innerHTML = `
+      <div class="result-box result-error">
+        <div class="result-icon">❌</div>
+        FRAME SCARTATO
+        <div class="result-detail">
+          Resto della divisione: ${remainder} → diverso da zero, errore rilevato!<br>
+          Bit alterati durante la trasmissione: ${flippedCount}.
+          Il frame viene scartato silenziosamente. Eventuale ritrasmissione spetta ai livelli superiori (es. TCP).
+        </div>
+      </div>
+    `;
+  }
+  scrollToElementById('rxBoard', 'start');
+});
+
+// Wrapper: stessa logica di computeCRCWithTrace ma senza padding (input già completo)
+function computeCRCWithRemainder(framedBits, generator) {
+  const dividend = framedBits.split('').map(c => parseInt(c));
+  const divisor  = generator.split('').map(c => parseInt(c));
+  const trace = [];
+
+  trace.push({
+    type: 'init',
+    dividend: framedBits,
+    note: `Frame ricevuto: ${framedBits}`
+  });
+
+  let workIdx = 0;
+  while (workIdx <= dividend.length - divisor.length) {
+    if (dividend[workIdx] === 1) {
+      const before = dividend.slice().join('');
+      for (let j = 0; j < divisor.length; j++) {
+        dividend[workIdx + j] ^= divisor[j];
+      }
+      const after = dividend.slice().join('');
+      trace.push({
+        type: 'xor',
+        before,
+        after,
+        divisorPos: workIdx,
+        divisor: generator
+      });
+    } else {
+      trace.push({
+        type: 'skip',
+        snapshot: dividend.slice().join(''),
+        skipPos: workIdx
+      });
+    }
+    workIdx++;
+  }
+
+  const n = generator.length - 1;
+  const remainder = dividend.slice(-n).join('');
+  trace.push({
+    type: 'final',
+    remainder,
+    fullDividend: dividend.join('')
+  });
+
+  return { crc: remainder, trace };
+}
+
+// ============================================================
+//   RESET
+// ============================================================
+document.getElementById('btnReset').addEventListener('click', () => {
+  messageInput.value = '1101';
+  generatorInput.value = '1011';
+  updatePolynomials();
+  document.getElementById('errorBox').innerHTML = '';
+  document.getElementById('section-tx').style.display = 'none';
+  document.getElementById('section-frame').style.display = 'none';
+  document.getElementById('section-rx').style.display = 'none';
+  currentMessage = '';
+  currentCRC = '';
+  currentFrame = '';
+  receivedFrame = '';
+});
+
+</script>
+</body>
+</html>
