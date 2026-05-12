@@ -1,10 +1,6 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20146585.svg)](https://doi.org/10.5281/zenodo.20146585)
 CRC Simulator - Cyclic Redundancy Check
 
-================================================================
- CRC Simulator - Cyclic Redundancy Check
- Version 3.5 - Zenodo Edition
-================================================================
 
 Author
 Domenico Capano – LearningObjects.org
