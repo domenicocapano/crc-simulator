@@ -1,3 +1,22 @@
+# CRC Simulator — Cyclic Redundancy Check
+
+Educational simulator for CRC-based error detection in computer networks.
+
+## Online version
+
+The simulator can be opened through GitHub Pages after activation.
+
+## Zenodo DOI
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20146585.svg)](https://doi.org/10.5281/zenodo.20146585)
+
+## Author
+
+Domenico Capano — LearningObjects.org
+
+## License
+
+Free for educational and training purposes. All rights reserved.
 ================================================================
  CRC Simulator - Cyclic Redundancy Check
  Version 3.5 - Zenodo Edition
